@@ -4,7 +4,8 @@ import { useUserRole } from '@/hooks/useUserRole';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Trash2, Plus, Edit, Trash, MapPin } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Trash2, Plus, Edit, Trash, MapPin, Copy, Eye, EyeOff } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import DustbinDialog from './DustbinDialog';
 
@@ -17,6 +18,7 @@ export default function DustbinList({ editable = false }: DustbinListProps) {
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedDustbin, setSelectedDustbin] = useState<any>(null);
+  const [visibleApiKeys, setVisibleApiKeys] = useState<Set<string>>(new Set());
   const { role, profile } = useUserRole();
   const { toast } = useToast();
 
@@ -120,6 +122,23 @@ export default function DustbinList({ editable = false }: DustbinListProps) {
     return <Badge className="bg-danger">High</Badge>;
   };
 
+  const copyToClipboard = (text: string, label: string) => {
+    navigator.clipboard.writeText(text);
+    toast({ title: 'Copied!', description: `${label} copied to clipboard` });
+  };
+
+  const toggleApiKeyVisibility = (dustbinId: string) => {
+    setVisibleApiKeys(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(dustbinId)) {
+        newSet.delete(dustbinId);
+      } else {
+        newSet.add(dustbinId);
+      }
+      return newSet;
+    });
+  };
+
   if (loading) {
     return <div className="text-center py-8">Loading dustbins...</div>;
   }
@@ -178,6 +197,58 @@ export default function DustbinList({ editable = false }: DustbinListProps) {
                   {dustbin.latestFillPercentage.toFixed(1)}%
                 </p>
               </div>
+              {editable && (role === 'superuser' || role === 'admin') && (
+                <div className="space-y-2 pt-2 border-t mt-2">
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-muted-foreground">Dustbin Code</label>
+                    <div className="flex gap-2">
+                      <Input 
+                        value={dustbin.dustbin_code} 
+                        readOnly 
+                        className="font-mono text-xs h-8"
+                      />
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        className="h-8 w-8"
+                        onClick={() => copyToClipboard(dustbin.dustbin_code, 'Dustbin Code')}
+                      >
+                        <Copy className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-muted-foreground">API Key</label>
+                    <div className="flex gap-2">
+                      <Input 
+                        value={visibleApiKeys.has(dustbin.id) ? dustbin.api_key : '••••••••-••••-••••-••••-••••••••••••'} 
+                        readOnly 
+                        className="font-mono text-xs h-8"
+                      />
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        className="h-8 w-8"
+                        onClick={() => toggleApiKeyVisibility(dustbin.id)}
+                      >
+                        {visibleApiKeys.has(dustbin.id) ? (
+                          <EyeOff className="h-3 w-3" />
+                        ) : (
+                          <Eye className="h-3 w-3" />
+                        )}
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        className="h-8 w-8"
+                        onClick={() => copyToClipboard(dustbin.api_key, 'API Key')}
+                      >
+                        <Copy className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
               {editable && (
                 <div className="flex gap-2 pt-2">
                   <Button

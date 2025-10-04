@@ -7,6 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/lib/auth';
+import { Copy } from 'lucide-react';
 
 interface DustbinDialogProps {
   open: boolean;
@@ -16,24 +18,27 @@ interface DustbinDialogProps {
 }
 
 export default function DustbinDialog({ open, onOpenChange, dustbin, onSuccess }: DustbinDialogProps) {
-  const [dustbinId, setDustbinId] = useState('');
+  const [dustbinCode, setDustbinCode] = useState('');
   const [institutionId, setInstitutionId] = useState('');
   const [latitude, setLatitude] = useState('');
   const [longitude, setLongitude] = useState('');
   const [locationName, setLocationName] = useState('');
+  const [apiKey, setApiKey] = useState('');
   const [institutions, setInstitutions] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const { role, profile } = useUserRole();
   const { toast } = useToast();
+  const { user } = useAuth();
 
   useEffect(() => {
     fetchInstitutions();
     if (dustbin) {
-      setDustbinId(dustbin.dustbin_id);
+      setDustbinCode(dustbin.dustbin_code);
       setInstitutionId(dustbin.institution_id);
       setLatitude(dustbin.latitude.toString());
       setLongitude(dustbin.longitude.toString());
       setLocationName(dustbin.location_name || '');
+      setApiKey(dustbin.api_key || '');
     } else {
       resetForm();
     }
@@ -45,17 +50,23 @@ export default function DustbinDialog({ open, onOpenChange, dustbin, onSuccess }
   };
 
   const resetForm = () => {
-    setDustbinId('');
+    setDustbinCode('');
     setInstitutionId(role === 'admin' ? profile?.institution_id || '' : '');
     setLatitude('');
     setLongitude('');
     setLocationName('');
+    setApiKey('');
+  };
+
+  const copyToClipboard = (text: string, label: string) => {
+    navigator.clipboard.writeText(text);
+    toast({ title: 'Copied!', description: `${label} copied to clipboard` });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!dustbinId || !institutionId || !latitude || !longitude) {
+    if (!dustbinCode || !institutionId || !latitude || !longitude) {
       toast({
         variant: 'destructive',
         title: 'Validation Error',
@@ -68,11 +79,13 @@ export default function DustbinDialog({ open, onOpenChange, dustbin, onSuccess }
 
     try {
       const data = {
-        dustbin_id: dustbinId,
+        dustbin_id: dustbinCode,
+        dustbin_code: dustbinCode,
         institution_id: institutionId,
         latitude: parseFloat(latitude),
         longitude: parseFloat(longitude),
         location_name: locationName || null,
+        created_by: user?.id,
       };
 
       if (dustbin) {
@@ -80,9 +93,17 @@ export default function DustbinDialog({ open, onOpenChange, dustbin, onSuccess }
         if (error) throw error;
         toast({ title: 'Success', description: 'Dustbin updated successfully' });
       } else {
-        const { error } = await supabase.from('dustbins').insert(data);
+        const { data: newDustbin, error } = await supabase
+          .from('dustbins')
+          .insert(data)
+          .select()
+          .single();
         if (error) throw error;
-        toast({ title: 'Success', description: 'Dustbin created successfully' });
+        setApiKey(newDustbin.api_key);
+        toast({ 
+          title: 'Success', 
+          description: 'Dustbin created successfully. API key generated!' 
+        });
       }
 
       onSuccess();
@@ -107,15 +128,36 @@ export default function DustbinDialog({ open, onOpenChange, dustbin, onSuccess }
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="dustbinId">Dustbin ID *</Label>
+            <Label htmlFor="dustbinCode">Dustbin Code *</Label>
             <Input
-              id="dustbinId"
-              value={dustbinId}
-              onChange={(e) => setDustbinId(e.target.value)}
+              id="dustbinCode"
+              value={dustbinCode}
+              onChange={(e) => setDustbinCode(e.target.value)}
               placeholder="BIN-001"
               required
+              disabled={!!dustbin}
             />
           </div>
+
+          {apiKey && (
+            <div className="space-y-2 p-4 bg-muted rounded-lg">
+              <Label>API Key (Save this securely!)</Label>
+              <div className="flex gap-2">
+                <Input value={apiKey} readOnly className="font-mono text-sm" />
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="outline"
+                  onClick={() => copyToClipboard(apiKey, 'API Key')}
+                >
+                  <Copy className="h-4 w-4" />
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Use this API key with your ESP8266 device. You won't be able to see it again!
+              </p>
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="institution">Institution *</Label>

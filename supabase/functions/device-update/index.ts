@@ -16,32 +16,35 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const { dustbin_id, sensor1_value, sensor2_value } = await req.json();
+    const { dustbin_code, api_key, sensor1_value, sensor2_value } = await req.json();
 
-    if (!dustbin_id || sensor1_value === undefined || sensor2_value === undefined) {
+    // Validate required fields
+    if (!dustbin_code || !api_key || sensor1_value === undefined || sensor2_value === undefined) {
       return new Response(
-        JSON.stringify({ error: 'Missing required fields' }),
+        JSON.stringify({ error: 'Missing required fields: dustbin_code, api_key, sensor1_value, sensor2_value' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Authenticate device using dustbin_code and api_key
+    const { data: dustbin, error: dustbinError } = await supabase
+      .from('dustbins')
+      .select('id')
+      .eq('dustbin_code', dustbin_code)
+      .eq('api_key', api_key)
+      .single();
+
+    if (dustbinError || !dustbin) {
+      console.error('Authentication failed:', dustbinError);
+      return new Response(
+        JSON.stringify({ error: 'Authentication failed. Invalid dustbin_code or api_key' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     // Calculate fill percentage (average of two sensors)
     const avgSensorValue = (parseFloat(sensor1_value) + parseFloat(sensor2_value)) / 2;
     const fill_percentage = Math.min(100, Math.max(0, avgSensorValue));
-
-    // Find dustbin by dustbin_id
-    const { data: dustbin, error: dustbinError } = await supabase
-      .from('dustbins')
-      .select('id')
-      .eq('dustbin_id', dustbin_id)
-      .single();
-
-    if (dustbinError || !dustbin) {
-      return new Response(
-        JSON.stringify({ error: 'Dustbin not found' }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
 
     // Insert reading
     const { error: insertError } = await supabase.from('readings').insert({

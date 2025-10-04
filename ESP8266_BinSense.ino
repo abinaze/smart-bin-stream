@@ -5,15 +5,12 @@
 #include <ESP8266HTTPClient.h>
 #include <WiFiClient.h>
 
-// WiFi credentials
+// BinSense Configuration
 const char* ssid = "YOUR_WIFI_SSID";
 const char* password = "YOUR_WIFI_PASSWORD";
-
-// API endpoint - Replace with your actual Lovable Cloud project URL
 const char* serverUrl = "https://nzcqvwxnrcljpokgzqvp.supabase.co/functions/v1/device-update";
-
-// Your dustbin ID
-const char* dustbinId = "BIN-001";
+const char* dustbinCode = "BIN-001";  // Your unique dustbin code from BinSense
+const char* apiKey = "YOUR_API_KEY";  // Your API key from BinSense (copy from dashboard)
 
 // Ultrasonic Sensor 1 pins
 #define TRIG_PIN_1 D1
@@ -118,7 +115,9 @@ void sendDataToServer(float fillPercentage, float sensor1, float sensor2) {
     http.begin(client, serverUrl);
     http.addHeader("Content-Type", "application/json");
     
-    String jsonData = "{\"dustbin_id\":\"" + String(dustbinId) + 
+    // Prepare JSON payload with authentication
+    String jsonData = "{\"dustbin_code\":\"" + String(dustbinCode) + 
+                     "\",\"api_key\":\"" + String(apiKey) +
                      "\",\"sensor1_value\":" + String(sensor1) + 
                      ",\"sensor2_value\":" + String(sensor2) + "}";
     
