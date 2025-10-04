@@ -16,7 +16,10 @@ export type Database = {
     Tables: {
       dustbins: {
         Row: {
+          api_key: string
           created_at: string | null
+          created_by: string | null
+          dustbin_code: string
           dustbin_id: string
           id: string
           institution_id: string
@@ -26,7 +29,10 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          api_key?: string
           created_at?: string | null
+          created_by?: string | null
+          dustbin_code: string
           dustbin_id: string
           id?: string
           institution_id: string
@@ -36,7 +42,10 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          api_key?: string
           created_at?: string | null
+          created_by?: string | null
+          dustbin_code?: string
           dustbin_id?: string
           id?: string
           institution_id?: string
@@ -166,6 +175,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_dustbin_status: {
+        Args: { bin_id: string }
+        Returns: number
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
