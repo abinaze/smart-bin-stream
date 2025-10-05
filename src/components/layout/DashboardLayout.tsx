@@ -2,7 +2,7 @@ import { ReactNode } from 'react';
 import { useAuth } from '@/lib/auth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { Button } from '@/components/ui/button';
-import { Trash2, LogOut, User, LayoutDashboard, Map, Trash, Info } from 'lucide-react';
+import { Trash2, LogOut, User, LayoutDashboard, Map, Trash, Info, UserCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useNavigate, useLocation } from 'react-router-dom';
 
@@ -23,6 +23,8 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
         return 'bg-purple-500 hover:bg-purple-600';
       case 'admin':
         return 'bg-blue-500 hover:bg-blue-600';
+      case 'supervisor':
+        return 'bg-orange-500 hover:bg-orange-600';
       case 'user':
         return 'bg-green-500 hover:bg-green-600';
       default:
@@ -96,6 +98,14 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
             >
               <Info className="h-4 w-4" />
               About
+            </Button>
+            <Button
+              variant={location.pathname === '/profile' ? 'default' : 'ghost'}
+              onClick={() => navigate('/profile')}
+              className="gap-2"
+            >
+              <UserCircle className="h-4 w-4" />
+              Profile
             </Button>
           </div>
         </div>

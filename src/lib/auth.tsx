@@ -49,7 +49,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signUp = async (email: string, password: string, username: string, institutionId?: string) => {
-    const { error } = await supabase.auth.signUp({
+    // Validate password strength
+    if (password.length < 8) {
+      return { error: { message: 'Password must be at least 8 characters' } };
+    }
+    if (!/\d/.test(password)) {
+      return { error: { message: 'Password must contain at least one number' } };
+    }
+    if (!/[!@#$%^&*]/.test(password)) {
+      return { error: { message: 'Password must contain at least one special character' } };
+    }
+
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -60,6 +71,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         emailRedirectTo: `${window.location.origin}/`
       }
     });
+
+    // Assign role after signup
+    if (data.user && !error) {
+      try {
+        await supabase.functions.invoke('assign-role', {
+          body: { userId: data.user.id }
+        });
+      } catch (roleError) {
+        console.error('Error assigning role:', roleError);
+      }
+    }
+
     return { error };
   };
 

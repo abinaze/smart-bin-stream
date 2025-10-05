@@ -8,7 +8,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/lib/auth';
-import { Copy } from 'lucide-react';
+import { Copy, AlertTriangle, Eye, EyeOff } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface DustbinDialogProps {
   open: boolean;
@@ -24,6 +25,8 @@ export default function DustbinDialog({ open, onOpenChange, dustbin, onSuccess }
   const [longitude, setLongitude] = useState('');
   const [locationName, setLocationName] = useState('');
   const [apiKey, setApiKey] = useState('');
+  const [deviceSecret, setDeviceSecret] = useState('');
+  const [showSecrets, setShowSecrets] = useState(false);
   const [institutions, setInstitutions] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const { role, profile } = useUserRole();
@@ -56,6 +59,8 @@ export default function DustbinDialog({ open, onOpenChange, dustbin, onSuccess }
     setLongitude('');
     setLocationName('');
     setApiKey('');
+    setDeviceSecret('');
+    setShowSecrets(false);
   };
 
   const copyToClipboard = (text: string, label: string) => {
@@ -91,18 +96,48 @@ export default function DustbinDialog({ open, onOpenChange, dustbin, onSuccess }
       if (dustbin) {
         const { error } = await supabase.from('dustbins').update(data).eq('id', dustbin.id);
         if (error) throw error;
+        
+        // Log audit event
+        await supabase.rpc('log_audit_event', {
+          p_user_id: user!.id,
+          p_action: 'dustbin_updated',
+          p_resource_type: 'dustbin',
+          p_resource_id: dustbin.id,
+          p_details: { dustbin_code: dustbinCode }
+        });
+        
         toast({ title: 'Success', description: 'Dustbin updated successfully' });
       } else {
+        // Generate device secret (random 32-char string)
+        const secret = crypto.randomUUID() + crypto.randomUUID();
+        
         const { data: newDustbin, error } = await supabase
           .from('dustbins')
-          .insert(data)
+          .insert({
+            ...data,
+            device_secret_hash: secret  // In production, hash this server-side
+          })
           .select()
           .single();
+          
         if (error) throw error;
+        
         setApiKey(newDustbin.api_key);
+        setDeviceSecret(secret);
+        setShowSecrets(true);
+        
+        // Log audit event
+        await supabase.rpc('log_audit_event', {
+          p_user_id: user!.id,
+          p_action: 'dustbin_created',
+          p_resource_type: 'dustbin',
+          p_resource_id: newDustbin.id,
+          p_details: { dustbin_code: dustbinCode }
+        });
+        
         toast({ 
           title: 'Success', 
-          description: 'Dustbin created successfully. API key generated!' 
+          description: 'Dustbin created! SAVE THE DEVICE SECRET NOW - you won\'t see it again!' 
         });
       }
 
@@ -139,11 +174,34 @@ export default function DustbinDialog({ open, onOpenChange, dustbin, onSuccess }
             />
           </div>
 
+          {(apiKey || deviceSecret) && (
+            <Alert className="border-orange-500 bg-orange-50 dark:bg-orange-950">
+              <AlertTriangle className="h-4 w-4 text-orange-600" />
+              <AlertDescription className="text-orange-800 dark:text-orange-200">
+                <strong>CRITICAL: Save these credentials now!</strong> The device secret will NEVER be shown again.
+                You need both the API Key and Device Secret to configure your ESP8266.
+              </AlertDescription>
+            </Alert>
+          )}
+
           {apiKey && (
             <div className="space-y-2 p-4 bg-muted rounded-lg">
-              <Label>API Key (Save this securely!)</Label>
+              <Label>API Key</Label>
               <div className="flex gap-2">
-                <Input value={apiKey} readOnly className="font-mono text-sm" />
+                <Input 
+                  value={apiKey} 
+                  readOnly 
+                  className="font-mono text-sm" 
+                  type={showSecrets ? 'text' : 'password'}
+                />
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="outline"
+                  onClick={() => setShowSecrets(!showSecrets)}
+                >
+                  {showSecrets ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </Button>
                 <Button
                   type="button"
                   size="icon"
@@ -153,8 +211,30 @@ export default function DustbinDialog({ open, onOpenChange, dustbin, onSuccess }
                   <Copy className="h-4 w-4" />
                 </Button>
               </div>
-              <p className="text-xs text-muted-foreground">
-                Use this API key with your ESP8266 device. You won't be able to see it again!
+            </div>
+          )}
+
+          {deviceSecret && (
+            <div className="space-y-2 p-4 bg-red-50 dark:bg-red-950 border-2 border-red-500 rounded-lg">
+              <Label className="text-red-800 dark:text-red-200">Device Secret (COPY NOW - shown only once!)</Label>
+              <div className="flex gap-2">
+                <Input 
+                  value={deviceSecret} 
+                  readOnly 
+                  className="font-mono text-sm border-red-300" 
+                  type={showSecrets ? 'text' : 'password'}
+                />
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="outline"
+                  onClick={() => copyToClipboard(deviceSecret, 'Device Secret')}
+                >
+                  <Copy className="h-4 w-4" />
+                </Button>
+              </div>
+              <p className="text-xs text-red-700 dark:text-red-300">
+                Use this secret in your ESP8266 code for HMAC authentication. Store it securely!
               </p>
             </div>
           )}

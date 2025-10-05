@@ -14,15 +14,97 @@ export type Database = {
   }
   public: {
     Tables: {
+      audit_logs: {
+        Row: {
+          action: string
+          created_at: string
+          details: Json | null
+          id: string
+          ip_address: string | null
+          resource_id: string | null
+          resource_type: string
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          ip_address?: string | null
+          resource_id?: string | null
+          resource_type: string
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          ip_address?: string | null
+          resource_id?: string | null
+          resource_type?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      device_logs: {
+        Row: {
+          created_at: string
+          dustbin_id: string
+          id: string
+          nonce: string | null
+          payload: Json
+          reported_at: string
+          signature_valid: boolean
+        }
+        Insert: {
+          created_at?: string
+          dustbin_id: string
+          id?: string
+          nonce?: string | null
+          payload: Json
+          reported_at?: string
+          signature_valid: boolean
+        }
+        Update: {
+          created_at?: string
+          dustbin_id?: string
+          id?: string
+          nonce?: string | null
+          payload?: Json
+          reported_at?: string
+          signature_valid?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "device_logs_dustbin_id_fkey"
+            columns: ["dustbin_id"]
+            isOneToOne: false
+            referencedRelation: "dustbins"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       dustbins: {
         Row: {
           api_key: string
           created_at: string | null
           created_by: string | null
+          device_secret_hash: string | null
           dustbin_code: string
           dustbin_id: string
+          firmware_version: string | null
           id: string
           institution_id: string
+          last_seen: string | null
           latitude: number
           location_name: string | null
           longitude: number
@@ -32,10 +114,13 @@ export type Database = {
           api_key?: string
           created_at?: string | null
           created_by?: string | null
+          device_secret_hash?: string | null
           dustbin_code: string
           dustbin_id: string
+          firmware_version?: string | null
           id?: string
           institution_id: string
+          last_seen?: string | null
           latitude: number
           location_name?: string | null
           longitude: number
@@ -45,10 +130,13 @@ export type Database = {
           api_key?: string
           created_at?: string | null
           created_by?: string | null
+          device_secret_hash?: string | null
           dustbin_code?: string
           dustbin_id?: string
+          firmware_version?: string | null
           id?: string
           institution_id?: string
+          last_seen?: string | null
           latitude?: number
           location_name?: string | null
           longitude?: number
@@ -60,6 +148,52 @@ export type Database = {
             columns: ["institution_id"]
             isOneToOne: false
             referencedRelation: "institutions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      institution_admins: {
+        Row: {
+          admin_user_id: string | null
+          created_at: string
+          id: string
+          institution_id: string
+          supervisor_user_id: string | null
+        }
+        Insert: {
+          admin_user_id?: string | null
+          created_at?: string
+          id?: string
+          institution_id: string
+          supervisor_user_id?: string | null
+        }
+        Update: {
+          admin_user_id?: string | null
+          created_at?: string
+          id?: string
+          institution_id?: string
+          supervisor_user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "institution_admins_admin_user_id_fkey"
+            columns: ["admin_user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "institution_admins_institution_id_fkey"
+            columns: ["institution_id"]
+            isOneToOne: false
+            referencedRelation: "institutions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "institution_admins_supervisor_user_id_fkey"
+            columns: ["supervisor_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -186,9 +320,23 @@ export type Database = {
         }
         Returns: boolean
       }
+      log_audit_event: {
+        Args: {
+          p_action: string
+          p_details?: Json
+          p_resource_id?: string
+          p_resource_type: string
+          p_user_id: string
+        }
+        Returns: string
+      }
+      verify_device_signature: {
+        Args: { p_dustbin_code: string; p_payload: string; p_signature: string }
+        Returns: boolean
+      }
     }
     Enums: {
-      app_role: "superuser" | "admin" | "user"
+      app_role: "superuser" | "admin" | "user" | "supervisor"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -316,7 +464,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["superuser", "admin", "user"],
+      app_role: ["superuser", "admin", "user", "supervisor"],
     },
   },
 } as const
