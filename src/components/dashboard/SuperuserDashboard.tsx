@@ -51,7 +51,10 @@ export default function SuperuserDashboard() {
             </button>
           </div>
 
-          {view === 'list' ? <DustbinList editable={true} /> : <DustbinMap editable={true} />}
+          <div>
+            {view === 'list' && <DustbinList editable={true} />}
+            {view === 'map' && <DustbinMap editable={true} key="superuser-map" />}
+          </div>
         </TabsContent>
       </Tabs>
     </DashboardLayout>
