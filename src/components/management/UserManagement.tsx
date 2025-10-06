@@ -9,9 +9,15 @@ import { Users, Edit, Trash, Shield } from 'lucide-react';
 
 interface UserManagementProps {
   isAdmin?: boolean;
+  isSuperuser?: boolean;
+  isSupervisor?: boolean;
 }
 
-export default function UserManagement({ isAdmin = false }: UserManagementProps) {
+export default function UserManagement({ 
+  isAdmin = false, 
+  isSuperuser = false,
+  isSupervisor = false 
+}: UserManagementProps) {
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const { role, profile } = useUserRole();
@@ -31,9 +37,30 @@ export default function UserManagement({ isAdmin = false }: UserManagementProps)
           user_roles(role)
         `);
 
-      // Admins can only see users in their institution
+      // Admins can only see users in their institution (exclude admins and supervisors)
       if (isAdmin && profile?.institution_id) {
         query = query.eq('institution_id', profile.institution_id);
+        const { data: allUsers } = await query;
+        const filteredUsers = allUsers?.filter((u: any) => {
+          const userRole = u.user_roles?.[0]?.role;
+          return userRole === 'user';
+        });
+        setUsers(filteredUsers || []);
+        setLoading(false);
+        return;
+      }
+
+      // Supervisors can only see admins in their institution
+      if (isSupervisor && profile?.institution_id) {
+        query = query.eq('institution_id', profile.institution_id);
+        const { data: allUsers } = await query;
+        const filteredUsers = allUsers?.filter((u: any) => {
+          const userRole = u.user_roles?.[0]?.role;
+          return userRole === 'admin';
+        });
+        setUsers(filteredUsers || []);
+        setLoading(false);
+        return;
       }
 
       const { data, error } = await query;
@@ -55,6 +82,8 @@ export default function UserManagement({ isAdmin = false }: UserManagementProps)
     switch (userRole) {
       case 'superuser':
         return 'bg-purple-500';
+      case 'supervisor':
+        return 'bg-orange-500';
       case 'admin':
         return 'bg-blue-500';
       case 'user':
@@ -99,7 +128,7 @@ export default function UserManagement({ isAdmin = false }: UserManagementProps)
                   <p className="text-sm text-muted-foreground">User ID</p>
                   <p className="font-mono text-xs">{user.id.slice(0, 8)}...</p>
                 </div>
-                {role === 'superuser' && (
+                {(isSuperuser || (isSupervisor && userRole === 'admin') || (isAdmin && userRole === 'user')) && (
                   <div className="flex gap-2 pt-2">
                     <Button variant="outline" size="sm" className="flex-1">
                       <Edit className="h-3 w-3 mr-1" />

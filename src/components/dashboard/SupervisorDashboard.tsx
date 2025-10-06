@@ -6,26 +6,22 @@ import UserManagement from '@/components/management/UserManagement';
 import DustbinList from '@/components/dustbins/DustbinList';
 import DustbinMap from '@/components/dustbins/DustbinMap';
 
-export default function SuperuserDashboard() {
+export default function SupervisorDashboard() {
   const [view, setView] = useState<'list' | 'map'>('list');
 
   return (
-    <DashboardLayout title="Superuser Dashboard">
-      <Tabs defaultValue="users" className="space-y-6">
+    <DashboardLayout title="Supervisor Dashboard">
+      <Tabs defaultValue="dustbins" className="space-y-6">
         <TabsList className="grid w-full grid-cols-2 max-w-md">
-          <TabsTrigger value="users">
-            <Users className="h-4 w-4 mr-2" />
-            User Management
-          </TabsTrigger>
           <TabsTrigger value="dustbins">
             <Trash2 className="h-4 w-4 mr-2" />
-            All Dustbins
+            Manage Dustbins
+          </TabsTrigger>
+          <TabsTrigger value="admins">
+            <Users className="h-4 w-4 mr-2" />
+            Manage Admins
           </TabsTrigger>
         </TabsList>
-
-        <TabsContent value="users" className="space-y-6">
-          <UserManagement isSuperuser={true} />
-        </TabsContent>
 
         <TabsContent value="dustbins" className="space-y-6">
           <div className="flex gap-2 mb-4">
@@ -52,6 +48,10 @@ export default function SuperuserDashboard() {
           </div>
 
           {view === 'list' ? <DustbinList editable={true} /> : <DustbinMap editable={true} />}
+        </TabsContent>
+
+        <TabsContent value="admins" className="space-y-6">
+          <UserManagement isSupervisor={true} />
         </TabsContent>
       </Tabs>
     </DashboardLayout>

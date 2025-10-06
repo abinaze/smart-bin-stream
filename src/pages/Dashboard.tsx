@@ -4,6 +4,7 @@ import { useAuth } from '@/lib/auth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { Loader2 } from 'lucide-react';
 import SuperuserDashboard from '@/components/dashboard/SuperuserDashboard';
+import SupervisorDashboard from '@/components/dashboard/SupervisorDashboard';
 import AdminDashboard from '@/components/dashboard/AdminDashboard';
 import UserDashboard from '@/components/dashboard/UserDashboard';
 
@@ -31,6 +32,7 @@ export default function Dashboard() {
   return (
     <>
       {role === 'superuser' && <SuperuserDashboard />}
+      {role === 'supervisor' && <SupervisorDashboard />}
       {role === 'admin' && <AdminDashboard />}
       {role === 'user' && <UserDashboard />}
       {!role && (
