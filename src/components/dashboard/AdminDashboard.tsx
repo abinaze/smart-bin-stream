@@ -47,7 +47,10 @@ export default function AdminDashboard() {
             </button>
           </div>
 
-          {view === 'list' ? <DustbinList editable={true} /> : <DustbinMap editable={true} />}
+          <div>
+            {view === 'list' && <DustbinList editable={true} />}
+            {view === 'map' && <DustbinMap editable={true} key="admin-map" />}
+          </div>
         </TabsContent>
 
         <TabsContent value="users" className="space-y-6">

@@ -5,7 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Users, Edit, Trash, Shield } from 'lucide-react';
+import { Users, Edit, Trash, Shield, UserPlus } from 'lucide-react';
+import AddAdminDialog from './AddAdminDialog';
 
 interface UserManagementProps {
   isAdmin?: boolean;
@@ -20,6 +21,7 @@ export default function UserManagement({
 }: UserManagementProps) {
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showAddAdmin, setShowAddAdmin] = useState(false);
   const { role, profile } = useUserRole();
   const { toast } = useToast();
 
@@ -104,7 +106,20 @@ export default function UserManagement({
           <Users className="h-6 w-6" />
           User Management
         </h2>
+        
+        {isSuperuser && (
+          <Button onClick={() => setShowAddAdmin(true)} className="gap-2">
+            <UserPlus className="h-4 w-4" />
+            Add New Admin
+          </Button>
+        )}
       </div>
+
+      <AddAdminDialog
+        open={showAddAdmin}
+        onOpenChange={setShowAddAdmin}
+        onSuccess={fetchUsers}
+      />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {users.map((user) => {

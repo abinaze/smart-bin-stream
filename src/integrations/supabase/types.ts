@@ -95,10 +95,11 @@ export type Database = {
       }
       dustbins: {
         Row: {
+          api_endpoint: string | null
           api_key: string
           created_at: string | null
           created_by: string | null
-          device_secret_hash: string | null
+          device_secret: string | null
           dustbin_code: string
           dustbin_id: string
           firmware_version: string | null
@@ -108,13 +109,16 @@ export type Database = {
           latitude: number
           location_name: string | null
           longitude: number
+          module_id: string | null
           updated_at: string | null
+          wifi_ssid: string | null
         }
         Insert: {
+          api_endpoint?: string | null
           api_key?: string
           created_at?: string | null
           created_by?: string | null
-          device_secret_hash?: string | null
+          device_secret?: string | null
           dustbin_code: string
           dustbin_id: string
           firmware_version?: string | null
@@ -124,13 +128,16 @@ export type Database = {
           latitude: number
           location_name?: string | null
           longitude: number
+          module_id?: string | null
           updated_at?: string | null
+          wifi_ssid?: string | null
         }
         Update: {
+          api_endpoint?: string | null
           api_key?: string
           created_at?: string | null
           created_by?: string | null
-          device_secret_hash?: string | null
+          device_secret?: string | null
           dustbin_code?: string
           dustbin_id?: string
           firmware_version?: string | null
@@ -140,7 +147,9 @@ export type Database = {
           latitude?: number
           location_name?: string | null
           longitude?: number
+          module_id?: string | null
           updated_at?: string | null
+          wifi_ssid?: string | null
         }
         Relationships: [
           {
