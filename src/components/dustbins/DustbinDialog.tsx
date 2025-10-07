@@ -24,6 +24,9 @@ export default function DustbinDialog({ open, onOpenChange, dustbin, onSuccess }
   const [latitude, setLatitude] = useState('');
   const [longitude, setLongitude] = useState('');
   const [locationName, setLocationName] = useState('');
+  const [wifiSsid, setWifiSsid] = useState('');
+  const [moduleId, setModuleId] = useState('');
+  const [apiEndpoint, setApiEndpoint] = useState('');
   const [apiKey, setApiKey] = useState('');
   const [deviceSecret, setDeviceSecret] = useState('');
   const [showSecrets, setShowSecrets] = useState(false);
@@ -41,6 +44,9 @@ export default function DustbinDialog({ open, onOpenChange, dustbin, onSuccess }
       setLatitude(dustbin.latitude.toString());
       setLongitude(dustbin.longitude.toString());
       setLocationName(dustbin.location_name || '');
+      setWifiSsid(dustbin.wifi_ssid || '');
+      setModuleId(dustbin.module_id || '');
+      setApiEndpoint(dustbin.api_endpoint || '');
       setApiKey(dustbin.api_key || '');
     } else {
       resetForm();
@@ -58,6 +64,9 @@ export default function DustbinDialog({ open, onOpenChange, dustbin, onSuccess }
     setLatitude('');
     setLongitude('');
     setLocationName('');
+    setWifiSsid('');
+    setModuleId('');
+    setApiEndpoint('');
     setApiKey('');
     setDeviceSecret('');
     setShowSecrets(false);
@@ -90,6 +99,9 @@ export default function DustbinDialog({ open, onOpenChange, dustbin, onSuccess }
         latitude: parseFloat(latitude),
         longitude: parseFloat(longitude),
         location_name: locationName || null,
+        wifi_ssid: wifiSsid || null,
+        module_id: moduleId || null,
+        api_endpoint: apiEndpoint || null,
         created_by: user?.id,
       };
 
@@ -115,7 +127,7 @@ export default function DustbinDialog({ open, onOpenChange, dustbin, onSuccess }
           .from('dustbins')
           .insert({
             ...data,
-            device_secret_hash: secret  // In production, hash this server-side
+            device_secret: secret
           })
           .select()
           .single();
@@ -294,6 +306,40 @@ export default function DustbinDialog({ open, onOpenChange, dustbin, onSuccess }
               onChange={(e) => setLocationName(e.target.value)}
               placeholder="Main Gate, Building A"
             />
+          </div>
+
+          <div className="space-y-4 p-4 bg-muted rounded-lg">
+            <h3 className="text-sm font-semibold">IoT Device Configuration</h3>
+            
+            <div className="space-y-2">
+              <Label htmlFor="wifiSsid">WiFi SSID</Label>
+              <Input
+                id="wifiSsid"
+                value={wifiSsid}
+                onChange={(e) => setWifiSsid(e.target.value)}
+                placeholder="MyWiFiNetwork"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="moduleId">Module ID</Label>
+              <Input
+                id="moduleId"
+                value={moduleId}
+                onChange={(e) => setModuleId(e.target.value)}
+                placeholder="ESP8266-001"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="apiEndpoint">API Endpoint</Label>
+              <Input
+                id="apiEndpoint"
+                value={apiEndpoint}
+                onChange={(e) => setApiEndpoint(e.target.value)}
+                placeholder="https://api.example.com/update"
+              />
+            </div>
           </div>
 
           <DialogFooter>

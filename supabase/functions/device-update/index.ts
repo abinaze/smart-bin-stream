@@ -123,7 +123,7 @@ Deno.serve(async (req) => {
     // Get device secret for authentication
     const { data: dustbin, error: dustbinError } = await supabase
       .from('dustbins')
-      .select('id, device_secret_hash, api_key')
+      .select('id, device_secret, api_key')
       .eq('dustbin_code', dustbin_code)
       .single();
 
@@ -147,7 +147,7 @@ Deno.serve(async (req) => {
     const signatureValid = verifySignature(
       payloadString, 
       signature, 
-      dustbin.device_secret_hash || dustbin.api_key
+      dustbin.device_secret || dustbin.api_key
     );
 
     if (!signatureValid) {
