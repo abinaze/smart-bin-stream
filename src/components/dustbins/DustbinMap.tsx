@@ -58,7 +58,7 @@ function DraggableMarker({ dustbin, editable, onUpdate }: any) {
           <p className="text-sm text-gray-600">{dustbin.institutions?.name}</p>
           <p className="text-sm">{dustbin.location_name}</p>
           <p className="text-sm font-semibold mt-2">
-            Fill Level: <span className={getIconColor(dustbin.latestFillPercentage || 0)}>{(dustbin.latestFillPercentage || 0).toFixed(1)}%</span>
+            Fill Level: <span style={{ color: getIconColor(dustbin.latestFillPercentage || 0) }}>{(dustbin.latestFillPercentage || 0).toFixed(1)}%</span>
           </p>
         </div>
       </Popup>
