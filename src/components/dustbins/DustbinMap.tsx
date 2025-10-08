@@ -163,9 +163,12 @@ export default function DustbinMap({ editable = false }: DustbinMapProps) {
   };
 
   return (
-    <Card className="overflow-hidden">
-      <CardContent className="p-0">
-        <div className="h-[600px] w-full">
+    <Card className="overflow-hidden border-2">
+      <CardContent className="p-0 relative">
+        <div className="h-[600px] w-full relative">
+          {/* Background gradient overlay for map enhancement */}
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5 pointer-events-none z-[400]" />
+          
           <MapContainer
             center={center}
             zoom={13}
@@ -187,8 +190,10 @@ export default function DustbinMap({ editable = false }: DustbinMapProps) {
           </MapContainer>
         </div>
         {editable && (
-          <div className="p-4 bg-muted text-sm text-muted-foreground">
-            Drag markers to update dustbin locations
+          <div className="p-4 bg-amber-50 dark:bg-amber-950 border-t-2 border-amber-200 dark:border-amber-800 text-sm">
+            <p className="font-semibold text-amber-900 dark:text-amber-100">
+              🖱️ Edit Mode Active: Drag dustbin markers to update their locations
+            </p>
           </div>
         )}
       </CardContent>

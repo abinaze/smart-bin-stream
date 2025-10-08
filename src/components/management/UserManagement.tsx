@@ -35,40 +35,47 @@ export default function UserManagement({
         .from('profiles')
         .select(`
           *,
-          institutions(name),
-          user_roles(role)
+          institutions(name)
         `);
 
-      // Admins can only see users in their institution (exclude admins and supervisors)
+      // Fetch all profiles first
+      let profilesQuery = query;
+      
       if (isAdmin && profile?.institution_id) {
-        query = query.eq('institution_id', profile.institution_id);
-        const { data: allUsers } = await query;
-        const filteredUsers = allUsers?.filter((u: any) => {
-          const userRole = u.user_roles?.[0]?.role;
-          return userRole === 'user';
-        });
-        setUsers(filteredUsers || []);
-        setLoading(false);
-        return;
+        profilesQuery = query.eq('institution_id', profile.institution_id);
+      } else if (isSupervisor && profile?.institution_id) {
+        profilesQuery = query.eq('institution_id', profile.institution_id);
       }
 
-      // Supervisors can only see admins in their institution
-      if (isSupervisor && profile?.institution_id) {
-        query = query.eq('institution_id', profile.institution_id);
-        const { data: allUsers } = await query;
-        const filteredUsers = allUsers?.filter((u: any) => {
-          const userRole = u.user_roles?.[0]?.role;
-          return userRole === 'admin';
-        });
-        setUsers(filteredUsers || []);
-        setLoading(false);
-        return;
+      const { data: profiles, error: profilesError } = await profilesQuery;
+      if (profilesError) throw profilesError;
+
+      // Fetch user roles separately
+      const { data: roles, error: rolesError } = await supabase
+        .from('user_roles')
+        .select('user_id, role');
+      
+      if (rolesError) throw rolesError;
+
+      // Combine profiles with their roles
+      const rolesMap = new Map(roles?.map(r => [r.user_id, r.role]) || []);
+      const usersWithRoles = profiles?.map(p => ({
+        ...p,
+        user_roles: [{ role: rolesMap.get(p.id) || 'user' }]
+      })) || [];
+
+      // Filter based on role
+      let filteredUsers = usersWithRoles;
+      
+      if (isAdmin) {
+        // Admins can only see regular users in their institution
+        filteredUsers = usersWithRoles.filter(u => u.user_roles[0].role === 'user');
+      } else if (isSupervisor) {
+        // Supervisors can only see admins in their institution
+        filteredUsers = usersWithRoles.filter(u => u.user_roles[0].role === 'admin');
       }
 
-      const { data, error } = await query;
-      if (error) throw error;
-
-      setUsers(data || []);
+      setUsers(filteredUsers);
     } catch (error: any) {
       toast({
         variant: 'destructive',
